@@ -11,7 +11,9 @@ const constants = {
   sectionselectedcolor: 'blue',
   sectionunselectedcolor: '#545461',
   sectionselectedtextcolor: 'white',
-  sectionunselectedtextcolor: '#757588'
+  sectionunselectedtextcolor: '#757588',
+  untoggleditemcolor: "white",
+  toggleditemcolor: "#757588"
 };
 
 var styles = StyleSheet.create({
@@ -36,6 +38,15 @@ var styles = StyleSheet.create({
   liText: {
     color: 'white',
     fontSize: 16,
+  },
+  liHeader: {
+    height: 35,
+    backgroundColor: constants.headerBackground,
+    justifyContent: 'center'
+  },
+  liHeaderText: {
+    paddingLeft: 16,
+    color: 'white'
   },
   tabrow: {
     flexDirection: 'row',

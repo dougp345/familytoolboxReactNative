@@ -3,7 +3,7 @@ import ReactNative from 'react-native';
 import IconIonicon from 'react-native-vector-icons/Ionicons';
 import IconEntypo from 'react-native-vector-icons/Entypo';
 const styles = require('../styles.js')
-const { View, TouchableHighlight, Text } = ReactNative;
+const { View, Text } = ReactNative;
 
 class ListItem extends Component {
   render() {

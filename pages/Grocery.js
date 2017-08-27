@@ -11,6 +11,7 @@ import Calendar from './Calendar';
 
 const styles = require('../styles.js');
 const ListItem = require('../components/ListItem');
+const ListSectionItem = require('../components/ListSectionItem');
 
 export default class Grocery extends React.Component {
 
@@ -18,16 +19,14 @@ export default class Grocery extends React.Component {
     super(props);
     StatusBar.setBarStyle('light-content', true);
     this.state = {
-      dataSource: new ListView.DataSource({
-        rowHasChanged: (row1, row2) => row1 !== row2,
-      }),
+      dataSource: new ListView.DataSource({ rowHasChanged: (row1, row2) => row1 !== row2, }),
       remainingItems: 0,
       selectedGroceryItems: [],
-      produceGroceryItemsView: [],
-      centerGroceryItemsView: [],
-      meatsGroceryItemsView: [],
-      coldGroceryItemsView: [],
-      miscGroceryItemsView: [],
+      produceGroceryItemsView: new ListView.DataSource({ rowHasChanged: (row1, row2) => row1 !== row2, }),
+      centerGroceryItemsView: new ListView.DataSource({ rowHasChanged: (row1, row2) => row1 !== row2, }),
+      meatsGroceryItemsView: new ListView.DataSource({ rowHasChanged: (row1, row2) => row1 !== row2, }),
+      coldGroceryItemsView: new ListView.DataSource({ rowHasChanged: (row1, row2) => row1 !== row2, }),
+      miscGroceryItemsView: new ListView.DataSource({ rowHasChanged: (row1, row2) => row1 !== row2, }),
       message: '',
       selectedSection: 0,
       selectedSectionColor: [styles.constants.sectionselectedcolor,
@@ -48,10 +47,12 @@ export default class Grocery extends React.Component {
     this.goGroceryList=this.goGroceryList.bind(this);
     this.goCalendar=this.goCalendar.bind(this);
     this.showOptions=this.showOptions.bind(this);
+    this.optionClear=this.optionClear.bind(this);
   }
 
   listenForItems(groceryDB) {
     groceryDB.on('value', (snap) => {
+      var itemToPush = {};
       var items = [];
       var selectedGroceryItems = [];
       var produceGroceryItemsView = [];
@@ -60,7 +61,7 @@ export default class Grocery extends React.Component {
       var coldGroceryItemsView = [];
       var miscGroceryItemsView = [];
       snap.forEach((child) => {
-        items.push({
+        itemToPush = {
           _key: child.key,
           item: child.val().item,
           section: child.val().section,
@@ -68,22 +69,23 @@ export default class Grocery extends React.Component {
           qtySelected: child.val().qtySelected,
           checked: child.val().checked,
           color: child.val().color
-        });
+        }
+        items.push(itemToPush);
         if (child.val().section == "produce" && child.val().qtySelected > 0) {
-          selectedGroceryItems.push(child);
-          produceGroceryItemsView.push(child);
+          selectedGroceryItems.push(itemToPush);
+          produceGroceryItemsView.push(itemToPush);
         } else if (child.val().section == "center" && child.val().qtySelected > 0) {
-          selectedGroceryItems.push(child);
-          centerGroceryItemsView.push(child);
+          selectedGroceryItems.push(itemToPush);
+          centerGroceryItemsView.push(itemToPush);
         } else if (child.val().section == "meats" && child.val().qtySelected > 0) {
-          selectedGroceryItems.push(child);
-          meatsGroceryItemsView.push(child);
+          selectedGroceryItems.push(itemToPush);
+          meatsGroceryItemsView.push(itemToPush);
         } else if (child.val().section == "cold" && child.val().qtySelected > 0) {
-          selectedGroceryItems.push(child);
-          coldGroceryItemsView.push(child);
+          selectedGroceryItems.push(itemToPush);
+          coldGroceryItemsView.push(itemToPush);
         } else if (child.val().section == "misc" && child.val().qtySelected > 0) {
-          selectedGroceryItems.push(child);
-          miscGroceryItemsView.push(child);
+          selectedGroceryItems.push(itemToPush);
+          miscGroceryItemsView.push(itemToPush);
         }
       });
       items.sort(this.sortArrayByItem);
@@ -91,11 +93,11 @@ export default class Grocery extends React.Component {
         dataSource: this.state.dataSource.cloneWithRows(items),
         remainingItems: this.countRemainingItems(items),
         selectedGroceryItems: selectedGroceryItems,
-        produceGroceryItemsView: produceGroceryItemsView,
-        centerGroceryItemsView: centerGroceryItemsView,
-        meatsGroceryItemsView: meatsGroceryItemsView,
-        coldGroceryItemsView: coldGroceryItemsView,
-        miscGroceryItemsView: miscGroceryItemsView
+        produceGroceryItemsView: this.state.produceGroceryItemsView.cloneWithRows(produceGroceryItemsView),
+        centerGroceryItemsView: this.state.centerGroceryItemsView.cloneWithRows(centerGroceryItemsView),
+        meatsGroceryItemsView: this.state.meatsGroceryItemsView.cloneWithRows(meatsGroceryItemsView),
+        coldGroceryItemsView: this.state.coldGroceryItemsView.cloneWithRows(coldGroceryItemsView),
+        miscGroceryItemsView: this.state.miscGroceryItemsView.cloneWithRows(miscGroceryItemsView)
       });
     });
   }
@@ -213,10 +215,85 @@ export default class Grocery extends React.Component {
           renderRow={this._renderItem.bind(this)}
           enableEmptySections={true}
           style={styles.listview}/>
-        )
+      )
+    } else if (this.state.selectedSection === 1) {
+      return (
+        <View style={{flex: 1}}>
+          <View style={styles.liHeader}>
+            <Text style={styles.liHeaderText}>(Qty) Item</Text>
+          </View>
+          <View style={{flex: 1}}>
+            <ListView
+              dataSource={this.state.produceGroceryItemsView}
+              renderRow={this._renderSectionItem.bind(this)}
+              enableEmptySections={true}
+              style={styles.listview}/>
+          </View>
+        </View>
+      )
+    } else if (this.state.selectedSection === 2) {
+      return (
+        <View style={{flex: 1}}>
+          <View style={styles.liHeader}>
+            <Text style={styles.liHeaderText}>Aisle | (Qty) Item</Text>
+          </View>
+          <View style={{flex: 1}}>
+            <ListView
+              dataSource={this.state.centerGroceryItemsView}
+              renderRow={this._renderSectionItem.bind(this)}
+              enableEmptySections={true}
+              style={styles.listview}/>
+          </View>
+        </View>
+      )
+    } else if (this.state.selectedSection === 3) {
+      return (
+        <View style={{flex: 1}}>
+          <View style={styles.liHeader}>
+            <Text style={styles.liHeaderText}>(Qty) Item</Text>
+          </View>
+          <View style={{flex: 1}}>
+            <ListView
+              dataSource={this.state.meatsGroceryItemsView}
+              renderRow={this._renderSectionItem.bind(this)}
+              enableEmptySections={true}
+              style={styles.listview}/>
+          </View>
+        </View>
+      )
+    } else if (this.state.selectedSection === 4) {
+      return (
+        <View style={{flex: 1}}>
+          <View style={styles.liHeader}>
+            <Text style={styles.liHeaderText}>(Qty) Item</Text>
+          </View>
+          <View style={{flex: 1}}>
+            <ListView
+              dataSource={this.state.coldGroceryItemsView}
+              renderRow={this._renderSectionItem.bind(this)}
+              enableEmptySections={true}
+              style={styles.listview}/>
+          </View>
+        </View>
+      )
+    } else if (this.state.selectedSection === 5) {
+      return (
+        <View style={{flex: 1}}>
+          <View style={styles.liHeader}>
+            <Text style={styles.liHeaderText}>(Qty) Item</Text>
+          </View>
+          <View style={{flex: 1}}>
+            <ListView
+              dataSource={this.state.miscGroceryItemsView}
+              renderRow={this._renderSectionItem.bind(this)}
+              enableEmptySections={true}
+              style={styles.listview}/>
+          </View>
+        </View>
+      )
     } else {
       return (
-        <Text style={{color: "white"}}>something selected</Text>
+        <Text style={{color: "white"}}>Invalid Selection</Text>
       )
     }
   }
@@ -231,8 +308,7 @@ export default class Grocery extends React.Component {
     };
 
     const onPressAddItem = () => {
-      console.log("add item pressed");
-      this.groceryDBforUpdate.ref('/groceryitems/' + item._key).set({item: item.item, aisle: item.aisle, checked: true, color: "", qtySelected: ++item.qtySelected, section: item.section});
+      this.groceryDBforUpdate.ref('/groceryitems/' + item._key).set({item: item.item, aisle: item.aisle, checked: true, color: styles.constants.untoggleditemcolor, qtySelected: ++item.qtySelected, section: item.section});
       this.setState({
         message: item.item + ' added to the list',
       });
@@ -240,6 +316,26 @@ export default class Grocery extends React.Component {
 
     return (
       <ListItem item={item} onPressSettings={onPressSettings} onPressAddItem={onPressAddItem} />
+    );
+  }
+
+  _renderSectionItem(item) {
+    const onToggleItem = (newValue) => {
+      var itemColor = "white";
+      if (!newValue) {
+        itemColor = styles.constants.toggleditemcolor;
+      }
+      this.groceryDBforUpdate.ref('/groceryitems/' + item._key).set({item: item.item, aisle: item.aisle, checked: newValue, color: itemColor, qtySelected: item.qtySelected, section: item.section});
+    };
+
+    var itemPrefix = "";
+    if (item.section == "center") {
+      itemPrefix = item.aisle + "  |  ( " + item.qtySelected + " )  ";
+    } else {
+      itemPrefix = "( " + item.qtySelected + " )  ";
+    }
+    return (
+      <ListSectionItem item={item} itemPrefix={itemPrefix} onToggleItem={onToggleItem} />
     );
   }
 
@@ -265,9 +361,9 @@ export default class Grocery extends React.Component {
         if (buttonIndex === 0) {
           this.optionDinners();
         } else if (buttonIndex === 1) {
-          this.optionClearSelected();
+          this.optionClear("selected");
         } else if (buttonIndex === 2) {
-          this.optionClearAll();
+          this.optionClear("all");
         } else {
           console.log('Cancel clicked');
         }
@@ -279,12 +375,23 @@ export default class Grocery extends React.Component {
     console.log("clicked Dinners");
   }
 
-  optionClearSelected() {
-    console.log("clicked Clear Selected");
-  }
-
-  optionClearAll() {
-    console.log("clicked Clear All");
+  optionClear(mode) {
+    var itemToUpdate = {};
+    this.groceryDBforUpdate.ref('/groceryitems/').once('value', (snap) => {
+      snap.forEach((item) => {
+        if (item.val().qtySelected > 0 && (mode == "all" || (mode == "selected" && !item.val().checked))) {
+          itemToUpdate = {
+            item: item.val().item,
+            section: item.val().section,
+            aisle: item.val().aisle,
+            qtySelected: 0,
+            checked: true,
+            color: styles.constants.untoggleditemcolor
+          }
+          this.groceryDBforUpdate.ref('/groceryitems/' + item.key).set(itemToUpdate);
+        }
+      });
+    });
   }
 
   countRemainingItems(items) {
