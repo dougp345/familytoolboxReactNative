@@ -10,7 +10,7 @@ class ListItem extends Component {
     return (
       <View style={styles.li}>
         <View style={{flex: 1}}>
-          <IconIonicon name="ios-settings-outline" size={30} onPress={this.props.onPressSettings}></IconIonicon>
+          <IconIonicon name="ios-settings-outline" size={30} color="#585858" onPress={this.props.onPressSettings}></IconIonicon>
         </View>
         <View style={{flex: 5}}>
           <Text style={styles.liText}>{this.props.item.item}</Text>
