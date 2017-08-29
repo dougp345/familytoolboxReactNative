@@ -312,7 +312,7 @@ export default class Grocery extends React.Component {
     };
 
     const onPressAddItem = () => {
-      this.groceryDBforUpdate.ref('/groceryitems/' + item._key).set({item: item.item, aisle: item.aisle, checked: true, color: styles.constants.untoggleditemcolor, qtySelected: ++item.qtySelected, section: item.section});
+      this.groceryDBforUpdate.ref('/groceryitems/' + item._key).update({checked: true, color: styles.constants.untoggleditemcolor, qtySelected: ++item.qtySelected});
       this.setState({
         message: item.item + ' added to the list',
       });
@@ -329,7 +329,7 @@ export default class Grocery extends React.Component {
       if (!newValue) {
         itemColor = styles.constants.toggleditemcolor;
       }
-      this.groceryDBforUpdate.ref('/groceryitems/' + item._key).set({item: item.item, aisle: item.aisle, checked: newValue, color: itemColor, qtySelected: item.qtySelected, section: item.section});
+      this.groceryDBforUpdate.ref('/groceryitems/' + item._key).update({checked: newValue, color: itemColor});
     };
 
     var itemPrefix = "";
@@ -379,22 +379,17 @@ export default class Grocery extends React.Component {
     console.log("clicked Dinners");
   }
 
-  optionClear(mode) {
-    var itemToUpdate = {};
-    this.groceryDBforUpdate.ref('/groceryitems/').once('value', (snap) => {
-      snap.forEach((item) => {
-        if (item.val().qtySelected > 0 && (mode == "all" || (mode == "selected" && !item.val().checked))) {
-          itemToUpdate = {
-            item: item.val().item,
-            section: item.val().section,
-            aisle: item.val().aisle,
-            qtySelected: 0,
-            checked: true,
-            color: styles.constants.untoggleditemcolor
-          }
-          this.groceryDBforUpdate.ref('/groceryitems/' + item.key).set(itemToUpdate);
-        }
-      });
+  async optionClear(mode) {
+    var itemsToUpdate = {};
+    for (var i = 0; i < this.state.selectedGroceryItems.length; i++) {
+      if (mode == "all" || (mode == "selected" && !this.state.selectedGroceryItems[i].checked)) {
+        itemsToUpdate[this.state.selectedGroceryItems[i]._key + '/qtySelected'] = 0;
+        itemsToUpdate[this.state.selectedGroceryItems[i]._key + '/checked'] = true;
+        itemsToUpdate[this.state.selectedGroceryItems[i]._key + '/color'] = styles.constants.untoggleditemcolor;
+      }
+    }
+    await this.groceryDBforUpdate.ref('/groceryitems/').update(itemsToUpdate).catch(function (err) {
+      console.log('error clearing items: ', err);
     });
   }
 
