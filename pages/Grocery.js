@@ -90,6 +90,7 @@ export default class Grocery extends React.Component {
       });
       items.sort(this.sortArrayByItem);
       this.setState({
+        message: '',
         dataSource: this.state.dataSource.cloneWithRows(items),
         remainingItems: this.countRemainingItems(items),
         selectedGroceryItems: selectedGroceryItems,
@@ -183,7 +184,6 @@ export default class Grocery extends React.Component {
             <Icon name="ios-calendar-outline" size={styles.constants.tabiconsize} color={styles.constants.tabiconnotselectedcolor} onPress={this.goCalendar}/>
           </View>
         </View>
-        <Notification backgroundColor="#F00F0F" message={this.state.message} />
       </View>
     );
   }
@@ -201,6 +201,7 @@ export default class Grocery extends React.Component {
       }
     }
     this.setState({
+      message: '',
       selectedSection: section,
       selectedSectionColor: buttonColors,
       selectedSectionTextColor: textColors
@@ -210,11 +211,14 @@ export default class Grocery extends React.Component {
   renderContent() {
     if (this.state.selectedSection === 0) {
       return (
-        <ListView
-          dataSource={this.state.dataSource}
-          renderRow={this._renderItem.bind(this)}
-          enableEmptySections={true}
-          style={styles.listview}/>
+        <View style={{flex: 1}}>
+          <ListView
+            dataSource={this.state.dataSource}
+            renderRow={this._renderItem.bind(this)}
+            enableEmptySections={true}
+            style={styles.listview}/>
+          <Notification backgroundColor="#F00F0F" message={this.state.message} />
+        </View>
       )
     } else if (this.state.selectedSection === 1) {
       return (
