@@ -4,6 +4,7 @@ import Notification from 'react-native-notification';
 import {StackNavigator} from 'react-navigation';
 import Button from 'react-native-button';
 import Icon from 'react-native-vector-icons/Ionicons';
+import SearchBar from 'react-native-material-design-searchbar';
 
 import FirebaseApp from '../components/Firebase';
 
@@ -48,6 +49,7 @@ export default class Grocery extends React.Component {
     this.goCalendar=this.goCalendar.bind(this);
     this.showOptions=this.showOptions.bind(this);
     this.optionClear=this.optionClear.bind(this);
+    this.onSearchChange=this.onSearchChange.bind(this);
   }
 
   listenForItems(groceryDB) {
@@ -89,8 +91,14 @@ export default class Grocery extends React.Component {
         }
       });
       items.sort(this.sortArrayByItem);
+      produceGroceryItemsView.sort(this.sortArrayByItem);
+      centerGroceryItemsView.sort(this.sortArrayByAisleThenItem);
+      meatsGroceryItemsView.sort(this.sortArrayByItem);
+      coldGroceryItemsView.sort(this.sortArrayByItem);
+      miscGroceryItemsView.sort(this.sortArrayByItem);
       this.setState({
         message: '',
+        allItems: items,
         dataSource: this.state.dataSource.cloneWithRows(items),
         remainingItems: this.countRemainingItems(items),
         selectedGroceryItems: selectedGroceryItems,
@@ -212,6 +220,22 @@ export default class Grocery extends React.Component {
     if (this.state.selectedSection === 0) {
       return (
         <View style={{flex: 1}}>
+          <SearchBar
+            onSearchChange={this.onSearchChange}
+            height={35}
+            onFocus={() => console.log('in onFocus')}
+            onBlur={() => console.log('in onBlur')}
+            onBackPress={() => console.log('in onBackPress')}
+            placeholder={'Search...'}
+            autoCorrect={false}
+            padding={0}
+            returnKeyType={'search'}
+            iconCloseName={'ios-close-circle-outline'}
+            iconSearchName={'ios-search-outline'}
+            iconColor={'blue'}
+            inputStyle={{backgroundColor: '#1C1C1C', borderColor: 'black'}}
+            textStyle={{color: 'white'}}
+          />
           <ListView
             dataSource={this.state.dataSource}
             renderRow={this._renderItem.bind(this)}
@@ -353,6 +377,29 @@ export default class Grocery extends React.Component {
     navigate('Calendar');
   }
 
+  onSearchChange(inputString) {
+    if (inputString === '') {
+      this.setState({
+        message: '',
+        dataSource: this.state.dataSource.cloneWithRows(this.state.allItems)
+      });
+    } else {
+      var filteredList = [];
+      for (var i = 0; i < this.state.allItems.length; i++) {
+        if (this.state.allItems[i].item.toLowerCase().indexOf(inputString.toLowerCase()) !== -1) {
+          filteredList.push(this.state.allItems[i]);
+        }
+      }
+      if (filteredList.length === 0) {
+        filteredList.push({item: 'Add New Item'});
+      }
+      this.setState({
+        message: '',
+        dataSource: this.state.dataSource.cloneWithRows(filteredList)
+      });
+    }
+  }
+
   showOptions() {
     var options = [ 'Dinners', 'Clear Selected', 'Clear All', 'Cancel' ];
     ActionSheetIOS.showActionSheetWithOptions(
@@ -410,5 +457,21 @@ export default class Grocery extends React.Component {
     if (a.item.toLowerCase() > b.item.toLowerCase())
       return 1;
     return 0;
+  }
+
+  sortArrayByAisleThenItem(a,b) {
+    if (a.aisle < b.aisle) {
+      return -1;
+    } else if (a.aisle > b.aisle) {
+      return 1;
+    } else {
+      if (a.item.toLowerCase() < b.item.toLowerCase()) {
+        return -1;
+      } else if (a.item.toLowerCase() > b.item.toLowerCase()) {
+        return 1;
+      } else {
+        return 0;
+      }
+    }
   }
 }
