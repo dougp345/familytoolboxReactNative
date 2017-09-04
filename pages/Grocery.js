@@ -29,6 +29,7 @@ export default class Grocery extends React.Component {
       coldGroceryItemsView: new ListView.DataSource({ rowHasChanged: (row1, row2) => row1 !== row2, }),
       miscGroceryItemsView: new ListView.DataSource({ rowHasChanged: (row1, row2) => row1 !== row2, }),
       message: '',
+      searchItem: '',
       selectedSection: 0,
       selectedSectionColor: [styles.constants.sectionselectedcolor,
                              styles.constants.sectionunselectedcolor,
@@ -46,10 +47,12 @@ export default class Grocery extends React.Component {
     this.groceryDB = FirebaseApp.database().ref().child('groceryitems');
     this.groceryDBforUpdate = FirebaseApp.database();
     this.goGroceryList=this.goGroceryList.bind(this);
+    this.goGroceryAddEditItem=this.goGroceryAddEditItem.bind(this);
     this.goCalendar=this.goCalendar.bind(this);
     this.showOptions=this.showOptions.bind(this);
     this.optionClear=this.optionClear.bind(this);
     this.onSearchChange=this.onSearchChange.bind(this);
+    this.optionAddNewItem=this.optionAddNewItem.bind(this);
   }
 
   listenForItems(groceryDB) {
@@ -326,24 +329,29 @@ export default class Grocery extends React.Component {
     }
   }
 
-  _addItem() {
-    console.log("add button pressed");
-  }
-
   _renderItem(item) {
     const onPressSettings = () => {
-      console.log("settings item pressed");
+      this.goGroceryAddEditItem(item, 'edit');
     };
 
     const onPressAddItem = () => {
-      this.groceryDBforUpdate.ref('/groceryitems/' + item._key).update({checked: true, color: styles.constants.untoggleditemcolor, qtySelected: ++item.qtySelected});
-      this.setState({
-        message: item.item + ' added to the list',
-      });
+      if (item.item === 'Add New Item') {
+        this.goGroceryAddEditItem({item: this.state.searchItem}, 'add');
+      } else {
+        this.groceryDBforUpdate.ref('/groceryitems/' + item._key).update({checked: true, color: styles.constants.untoggleditemcolor, qtySelected: ++item.qtySelected});
+        this.setState({
+          message: item.item + ' added to the list',
+        });
+      }
     };
 
+    var renderSettingsIcon = true;
+    if (item.item === 'Add New Item') {
+      renderSettingsIcon = false;
+    }
+
     return (
-      <ListItem item={item} onPressSettings={onPressSettings} onPressAddItem={onPressAddItem} />
+      <ListItem item={item} renderSettingsIcon={renderSettingsIcon} onPressSettings={onPressSettings} onPressAddItem={onPressAddItem} />
     );
   }
 
@@ -372,6 +380,11 @@ export default class Grocery extends React.Component {
     navigate('GroceryList', {selectedGroceryItems: this.state.selectedGroceryItems});
   }
 
+  goGroceryAddEditItem(item, mode) {
+    const { navigate } = this.props.navigation;
+    navigate('GroceryAddEditItem', {item: item, mode: mode});
+  }
+
   goCalendar() {
     const { navigate } = this.props.navigation;
     navigate('Calendar');
@@ -395,31 +408,38 @@ export default class Grocery extends React.Component {
       }
       this.setState({
         message: '',
+        searchItem: inputString,
         dataSource: this.state.dataSource.cloneWithRows(filteredList)
       });
     }
   }
 
   showOptions() {
-    var options = [ 'Dinners', 'Clear Selected', 'Clear All', 'Cancel' ];
+    var options = [ 'Add New Item', 'Dinners', 'Clear Selected', 'Clear All', 'Cancel' ];
     ActionSheetIOS.showActionSheetWithOptions(
       {
         options: options,
-        destructiveButtonIndex: 2,
-        cancelButtonIndex: 3
+        destructiveButtonIndex: 3,
+        cancelButtonIndex: 4
       },
       (buttonIndex) => {
         if (buttonIndex === 0) {
-          this.optionDinners();
+          this.optionAddNewItem();
         } else if (buttonIndex === 1) {
-          this.optionClear("selected");
+          this.optionDinners();
         } else if (buttonIndex === 2) {
+          this.optionClear("selected");
+        } else if (buttonIndex === 3) {
           this.optionClear("all");
         } else {
           console.log('Cancel clicked');
         }
       }
     );
+  }
+
+  optionAddNewItem() {
+    this.goGroceryAddEditItem({}, 'add');
   }
 
   optionDinners() {
@@ -460,9 +480,9 @@ export default class Grocery extends React.Component {
   }
 
   sortArrayByAisleThenItem(a,b) {
-    if (a.aisle < b.aisle) {
+    if (Number(a.aisle) < Number(b.aisle)) {
       return -1;
-    } else if (a.aisle > b.aisle) {
+    } else if (Number(a.aisle) > Number(b.aisle)) {
       return 1;
     } else {
       if (a.item.toLowerCase() < b.item.toLowerCase()) {
