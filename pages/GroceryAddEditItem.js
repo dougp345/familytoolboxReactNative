@@ -4,6 +4,8 @@ import Notification from 'react-native-notification';
 import {StackNavigator} from 'react-navigation';
 import Button from 'react-native-button';
 
+import FirebaseApp from '../components/Firebase';
+
 const styles = require('../styles.js');
 
 export default class GroceryAddEditItem extends React.Component {
@@ -12,11 +14,14 @@ export default class GroceryAddEditItem extends React.Component {
     super(props);
     this.state = {
       mode: '',
+      currentItemKey: '',
       newItem: '',
       newSection: '',
       newAisle: 0,
       message: ''
     }
+    this.groceryDB = FirebaseApp.database().ref().child('groceryitems');
+    this.groceryDBforUpdate = FirebaseApp.database();
     this.renderAisle=this.renderAisle.bind(this);
     this.saveAction=this.saveAction.bind(this);
     this.cancelAction=this.cancelAction.bind(this);
@@ -30,8 +35,9 @@ export default class GroceryAddEditItem extends React.Component {
     }
     this.setState({
       mode: this.props.navigation.state.params.mode,
-      newItem: this.props.navigation.state.params.item.item,
-      newSection: this.props.navigation.state.params.item.section,
+      currentItemKey: this.props.navigation.state.params.item._key,
+      newItem: this.props.navigation.state.params.item.item || '',
+      newSection: this.props.navigation.state.params.item.section || 'produce',
       newAisle: this.props.navigation.state.params.item.aisle || 0,
       message: ''
     });
@@ -81,19 +87,19 @@ export default class GroceryAddEditItem extends React.Component {
         </View>
         {this.renderAisle()}
         <View style={{flex: 1, padding: 16}}>
-          <View style={{padding: 10}}>
+          <View style={{padding: 10, height: 70}}>
             <Button containerStyle={{padding: 10, height: 40, justifyContent: 'center', overflow:'hidden', borderRadius:5, backgroundColor: 'blue'}}
                     onPress={this.saveAction}>
               <Text style={{color: 'white', textAlign: 'center'}}>Save</Text>
             </Button>
           </View>
-          <View style={{padding: 10}}>
+          <View style={{padding: 10, height: 70}}>
             <Button containerStyle={{padding: 10, height: 40, justifyContent: 'center', overflow:'hidden', borderRadius:5, backgroundColor: 'red'}}
                     onPress={this.cancelAction}>
               <Text style={{color: 'white', textAlign: 'center'}}>Cancel</Text>
             </Button>
           </View>
-          <View style={{padding: 10}}>
+          <View style={{padding: 10, height: 70}}>
             <Notification backgroundColor="#F00F0F" message={this.state.message} />
           </View>
         </View>
@@ -130,11 +136,19 @@ export default class GroceryAddEditItem extends React.Component {
   }
 
   saveAction() {
-    this.setState({
-      message: 'item saved',
-    });
-    // const { goBack } = this.props.navigation;
-    // goBack();
+    if (this.state.newItem === '') {
+      this.setState({
+        message: 'item name is required',
+      });
+    } else {
+      if (this.state.mode === 'add') {
+        this.groceryDB.push({item: this.state.newItem, section: this.state.newSection, aisle: this.state.newAisle, checked: true, color: styles.constants.untoggleditemcolor, qtySelected: 1});
+      } else {
+        this.groceryDBforUpdate.ref('/groceryitems/' + this.state.currentItemKey).update({item: this.state.newItem, section: this.state.newSection, aisle: this.state.newAisle});
+      }
+      const { goBack } = this.props.navigation;
+      goBack();
+    }
   }
 
   cancelAction() {
