@@ -385,6 +385,11 @@ export default class Grocery extends React.Component {
     navigate('GroceryAddEditItem', {item: item, mode: mode});
   }
 
+  goGroceryDinners() {
+    const { navigate } = this.props.navigation;
+    navigate('GroceryDinners');
+  }
+
   goCalendar() {
     const { navigate } = this.props.navigation;
     navigate('Calendar');
@@ -443,7 +448,7 @@ export default class Grocery extends React.Component {
   }
 
   optionDinners() {
-    console.log("clicked Dinners");
+    this.goGroceryDinners();
   }
 
   async optionClear(mode) {
